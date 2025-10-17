@@ -33,7 +33,8 @@ public class FlightSearch {
    public FlightSearch(Clock clock) { this.clock = clock; }
 
    /**
-    * Validates all inputs against the 11 conditions. If valid, initializes attributes and returns true.
+    * Validates all inputs against the 11 conditions.
+    * If valid, initializes attributes and returns true.
     * If invalid, returns false and leaves existing attributes unchanged.
     */
    public boolean runFlightSearch(String departureDate,    String departureAirportCode,   boolean emergencyRowSeating, 
@@ -44,7 +45,7 @@ public class FlightSearch {
       LocalDate ret = parseStrictDMY(returnDate);
       if (dep == null || ret == null) return false;
 
-      // Condition 6: departure not in the past (relative to injected clock)
+      // Condition 6: departure not in the past
       LocalDate today = LocalDate.now(clock);
       if (dep.isBefore(today)) return false;
 
@@ -59,7 +60,8 @@ public class FlightSearch {
       // Condition 9: seating class allowed
       if (!ALLOWED_CLASSES.contains(seatingClass)) return false;
 
-      // Condition 1: total passengers 1..9
+      // Condition 1: total passengers 1..9 and no negative children/infants
+      if (childPassengerCount < 0 || infantPassengerCount < 0) return false;
       int total = adultPassengerCount + childPassengerCount + infantPassengerCount;
       if (total < 1 || total > 9) return false;
 
@@ -90,7 +92,7 @@ public class FlightSearch {
       // Condition 10: only economy can have emergency row seating
       if (emergencyRowSeating && !"economy".equals(seatingClass)) return false;
 
-      // If all checks pass, initialize attributes
+      // All checks passed → update attributes
       this.departureDate = departureDate;
       this.departureAirportCode = departureAirportCode;
       this.emergencyRowSeating = emergencyRowSeating;
@@ -100,16 +102,16 @@ public class FlightSearch {
       this.adultPassengerCount = adultPassengerCount;
       this.childPassengerCount = childPassengerCount;
       this.infantPassengerCount = infantPassengerCount;
+
       return true;
    }
 
-   // Helpers
    private LocalDate parseStrictDMY(String dmy) {
        try { return LocalDate.parse(dmy, DMY); }
        catch (Exception e) { return null; }
    }
 
-   // Getters
+   // Getters for test validation
    public String getDepartureDate() { return departureDate; }
    public String getDepartureAirportCode() { return departureAirportCode; }
    public boolean isEmergencyRowSeating() { return emergencyRowSeating; }
