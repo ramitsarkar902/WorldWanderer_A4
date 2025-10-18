@@ -15,8 +15,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * JUnit 5 tests for FlightSearch.runFlightSearch()
- * Updated per lecturer clarification:
- *  - Added negative child/infant count tests (Condition 1)
  *  - Added pre-/post-condition validation of class attributes
  */
 public class FlightSearchTest {
@@ -27,7 +25,7 @@ public class FlightSearchTest {
     @BeforeEach
     void setup() {
         ZoneId zone = ZoneId.of("Australia/Melbourne");
-        this.fixedClock = Clock.fixed(Instant.parse("2025-10-12T14:00:00Z"), zone); // ~13/10/2025 local
+        this.fixedClock = Clock.fixed(Instant.parse("2025-10-12T14:00:00Z"), zone); 
         this.fs = new FlightSearch(fixedClock);
     }
 
@@ -47,7 +45,6 @@ public class FlightSearchTest {
         "14/10/2025,mel,false,20/10/2025,pvg,economy,1,0,0,true",    // total = 1
         "14/10/2025,mel,false,20/10/2025,pvg,economy,5,2,2,true",    // total = 9
         "14/10/2025,mel,false,20/10/2025,pvg,economy,9,1,0,false",   // >9 invalid
-        // 🔹 new tests per clarification:
         "14/10/2025,mel,false,20/10/2025,pvg,economy,2,-1,0,false",  // negative children
         "14/10/2025,mel,false,20/10/2025,pvg,economy,2,0,-1,false"   // negative infants
     })
@@ -166,11 +163,14 @@ public class FlightSearchTest {
 
     // ---------- Condition 10 ----------
     @ParameterizedTest
-    @DisplayName("Condition 10: emergency rows only for economy")
+    @DisplayName("Condition 10: only economy can have emergency row; all classes can be non-emergency")
     @CsvSource({
-        "14/10/2025,mel,true,20/10/2025,pvg,business,1,0,0,false",
-        "14/10/2025,mel,true,20/10/2025,pvg,economy,1,0,0,true"
+        "14/10/2025,mel,true,20/10/2025,pvg,business,1,0,0,false",   // non-economy + emergency → invalid
+        "14/10/2025,mel,true,20/10/2025,pvg,economy,1,0,0,true",     // economy + emergency → valid
+        "14/10/2025,mel,false,20/10/2025,pvg,business,1,0,0,true",   // any class non-emergency → valid
+        "14/10/2025,mel,false,20/10/2025,pvg,first,1,0,0,true"       // first non-emergency → valid
     })
+
     void cond10_emergencyOnlyEconomy(String dep, String depAC, boolean emg,
                                      String ret, String destAC, String cls,
                                      int ad, int ch, int in, boolean expected) {
@@ -208,7 +208,6 @@ public class FlightSearchTest {
     @Test
     @DisplayName("Pre/Post validation: class values update only when valid")
     void attributeUpdateProof() {
-        // pre: initial valid setup
         boolean ok1 = call("14/10/2025","mel",false,"20/10/2025","pvg","economy",1,0,0);
         assertTrue(ok1);
         assertEquals("14/10/2025", fs.getDepartureDate());
@@ -217,7 +216,6 @@ public class FlightSearchTest {
         // invalid call (negative children)
         boolean ok2 = call("14/10/2025","mel",false,"20/10/2025","pvg","economy",1,-1,0);
         assertFalse(ok2);
-        // ensure unchanged
         assertEquals("14/10/2025", fs.getDepartureDate());
         assertEquals(1, fs.getAdultPassengerCount());
 
